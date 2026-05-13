@@ -1,42 +1,94 @@
 /**
  * Analyze Controller
- * Logic for handling analysis requests.
+ * Blocking JSON + streaming SSE endpoints.
  */
 
-const { generateAnalysis } = require('../services/ollamaService');
+const { generateAnalysis, generateAnalysisStream } = require('../services/ollamaService');
+const { initDB } = require('../config/db');
 
 const analyzeTranscript = async (req, res) => {
   const { transcript } = req.body;
 
-  // Validation
-  if (!transcript || transcript.trim() === "") {
-    return res.status(400).json({ error: "Transcript text cannot be empty." });
+  if (!transcript || transcript.trim() === '') {
+    return res.status(400).json({ error: 'Transcript text cannot be empty.' });
+  }
+  if (transcript.length > 50000) {
+    return res.status(400).json({ error: 'Transcript is too long. Maximum 50,000 characters allowed.' });
   }
 
   try {
-    console.log("[CONTROLLER] Analysis request received...");
-    
-    // Retry logic (Image 11 requirement)
+    console.log('[CONTROLLER] Analysis request');
+
     let result;
     let attempts = 0;
-    const maxAttempts = 3;
-
-    while (attempts < maxAttempts) {
+    while (attempts < 3) {
       try {
         result = await generateAnalysis(transcript);
-        break; 
+        break;
       } catch (e) {
         attempts++;
-        console.warn(`[RETRY] Attempt ${attempts} failed. ${e.message}`);
-        if (attempts >= maxAttempts) throw e;
+        console.warn(`[RETRY] Attempt ${attempts} failed: ${e.message}`);
+        if (attempts >= 3) throw e;
       }
     }
 
+    await _storeResult('anonymous', transcript, result);
     res.json(result);
   } catch (error) {
-    console.error("[CONTROLLER ERROR]", error.message);
-    res.status(500).json({ error: error.message });
+    console.error('[CONTROLLER ERROR]', error.message);
+    res.status(500).json({ error: error.message || 'Analysis failed. Please try again.' });
   }
 };
 
-module.exports = { analyzeTranscript };
+const analyzeTranscriptStream = async (req, res) => {
+  const { transcript } = req.body;
+
+  if (!transcript || transcript.trim() === '') {
+    return res.status(400).json({ error: 'Transcript text cannot be empty.' });
+  }
+  if (transcript.length > 50000) {
+    return res.status(400).json({ error: 'Transcript is too long. Maximum 50,000 characters allowed.' });
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  const send = (data) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+    if (typeof res.flush === 'function') res.flush();
+  };
+
+  try {
+    console.log('[STREAM CONTROLLER] Analysis stream');
+    send({ type: 'start' });
+
+    const result = await generateAnalysisStream(transcript, (chunk) => {
+      send({ type: 'chunk', text: chunk });
+    });
+
+    await _storeResult('anonymous', transcript, result);
+    send({ type: 'done', result });
+  } catch (error) {
+    console.error('[STREAM CONTROLLER ERROR]', error.message);
+    send({ type: 'error', message: error.message || 'Analysis failed.' });
+  }
+
+  res.end();
+};
+
+async function _storeResult(userId, transcript, result) {
+  const db = await initDB();
+  db.data.analyses.push({
+    id: Date.now().toString(),
+    userId,
+    timestamp: new Date().toISOString(),
+    transcript: transcript.substring(0, 500),
+    result,
+  });
+  await db.write();
+}
+
+module.exports = { analyzeTranscript, analyzeTranscriptStream };

@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Trinethra Supervisor Feedback Analyzer API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -14,12 +14,9 @@
   "type": "commonjs",
   "dependencies": {
     "axios": "^1.16.0",
-    "bcryptjs": "^3.0.3",
-    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
     "lowdb": "^7.0.1",
     "nodemon": "^3.1.14"
   }
