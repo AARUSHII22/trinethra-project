@@ -90,19 +90,6 @@ const Sidebar = () => {
           />
         </nav>
       </div>
-
-      <div className="mt-auto px-6 space-y-1">
-        <NavItem 
-          icon="settings" 
-          label="Settings" 
-          onClick={() => console.log("Sidebar: Settings clicked")} 
-        />
-        <NavItem 
-          icon="help" 
-          label="Help" 
-          onClick={() => console.log("Sidebar: Help clicked")} 
-        />
-      </div>
     </motion.aside>
   );
 };

@@ -1,5 +1,5 @@
 /**
- * Loads assignment artifacts from the repository root (rubric.json, context.md).
+ * Loads assignment artifacts from the repository root (rubric.json, context.txt).
  */
 
 const fs = require('fs');
@@ -12,8 +12,8 @@ function readRubric() {
   return JSON.parse(fs.readFileSync(p, 'utf8'));
 }
 
-function readContextMd() {
-  const p = path.join(ROOT, 'context.md');
+function readContextText() {
+  const p = path.join(ROOT, 'context.txt');
   return fs.readFileSync(p, 'utf8');
 }
 
@@ -22,7 +22,7 @@ function getAssignmentPayload() {
   if (!_cache) {
     _cache = {
       rubric: readRubric(),
-      contextMd: readContextMd(),
+      contextMd: readContextText(),
     };
   }
   return _cache;

@@ -4,6 +4,9 @@ import { useNav } from '../../navigation';
 import { useAnalysis } from '../../context/AnalysisContext';
 import { generateAnalysisPDF } from '../../utils/pdfGenerator';
 
+// Safely coerce any AI-returned value to a string for rendering
+const str = (v) => (typeof v === 'string' ? v : v == null ? '' : JSON.stringify(v));
+
 // --- Reusable Subcomponents ---
 
 const NavLink = ({ href, icon, title, active }) => (
@@ -19,8 +22,8 @@ const NavLink = ({ href, icon, title, active }) => (
   </motion.a>
 );
 
-const EvidenceCard = ({ type, time, quote, tags, colorBorder, colorBg }) => (
-  <motion.div 
+const EvidenceCard = ({ type, time, quote, tags = [], colorBorder, colorBg }) => (
+  <motion.div
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
@@ -32,30 +35,48 @@ const EvidenceCard = ({ type, time, quote, tags, colorBorder, colorBg }) => (
       <span className="font-data-mono text-[11px] text-outline">{time}</span>
     </div>
     <blockquote className="font-transcript-text text-transcript-text italic text-on-surface mb-4 leading-relaxed">
-      "{quote}"
+      "{str(quote)}"
     </blockquote>
-    <div className="flex gap-2">
-      {tags.map(tag => (
-        <span key={tag} className="bg-surface-container text-on-surface-variant text-[10px] font-label-caps px-2 py-1 rounded">
-          {tag}
+    <div className="flex gap-2 flex-wrap">
+      {Array.isArray(tags) && tags.map(tag => (
+        <span key={str(tag)} className="bg-surface-container text-on-surface-variant text-[10px] font-label-caps px-2 py-1 rounded">
+          {str(tag)}
         </span>
       ))}
     </div>
   </motion.div>
 );
 
-const KPITile = ({ label, value, status, colorText, statusColor, delay }) => (
-  <motion.div 
-    initial={{ opacity: 0, scale: 0.95 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ delay, duration: 0.5 }}
-    className="bg-white border border-outline-variant p-4 flex flex-col items-center text-center shadow-sm"
-  >
-    <span className="font-label-caps text-[10px] text-outline mb-2">{label}</span>
-    <span className={`font-display-lg ${colorText}`}>{value}</span>
-    <span className={`text-[10px] ${statusColor} mt-2 font-medium`}>{status}</span>
-  </motion.div>
-);
+const STATUS_DOT = {
+  'Strong link':      'bg-tertiary',
+  'Moderate link':    'bg-primary',
+  'Weak / indirect':  'bg-outline',
+  'Not evidenced':    'bg-error',
+};
+
+const KPIRow = ({ label, value, status, delay }) => {
+  const dotColor = STATUS_DOT[status] ?? 'bg-outline';
+  const textColor =
+    status === 'Not evidenced' ? 'text-error' :
+    status === 'Strong link'   ? 'text-tertiary' :
+    status === 'Moderate link' ? 'text-primary' : 'text-outline';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay, duration: 0.3 }}
+      className="flex items-start gap-3 py-3 border-b border-outline-variant last:border-0"
+    >
+      <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
+      <div className="flex-1 min-w-0">
+        <p className="font-label-caps text-[10px] text-outline uppercase tracking-wide mb-0.5">{str(label)}</p>
+        <p className="text-sm text-on-surface leading-snug">{str(value) || '—'}</p>
+      </div>
+      <span className={`flex-shrink-0 text-[10px] font-medium mt-0.5 ${textColor}`}>{str(status)}</span>
+    </motion.div>
+  );
+};
 
 const GapCard = ({ icon, title, desc, meta, bgClass, borderClass, iconClass }) => (
   <motion.div 
@@ -67,8 +88,8 @@ const GapCard = ({ icon, title, desc, meta, bgClass, borderClass, iconClass }) =
       {meta && (
         <p className="text-[10px] font-data-mono text-outline uppercase tracking-wide mb-1">{meta}</p>
       )}
-      <p className="font-bold text-on-surface text-body-base">{title}</p>
-      <p className="text-on-surface-variant text-sm">{desc}</p>
+      <p className="font-bold text-on-surface text-body-base">{str(title)}</p>
+      <p className="text-on-surface-variant text-sm">{str(desc)}</p>
     </div>
   </motion.div>
 );
@@ -179,35 +200,35 @@ const AnalysisResults = () => {
           transition={{ delay: 0.5 }}
           className="mb-8"
         >
-          <h2 className="font-headline-md text-headline-md text-on-surface mb-2">{result?.label || "Assessment"}</h2>
+          <h2 className="font-headline-md text-headline-md text-on-surface mb-2">{str(result?.label) || "Assessment"}</h2>
           <p className="text-on-surface-variant text-body-base leading-relaxed">
-            {analysisData.finalAssessment ?? result?.justification ?? "No justification provided."}
+            {str(analysisData.finalAssessment ?? result?.justification) || "No justification provided."}
           </p>
         </motion.div>
 
-        <nav className="space-y-4 mb-auto">
+        <nav className="space-y-4 flex-1">
           <NavLink href="#behavioral" icon="analytics" title="BEHAVIORAL EVIDENCE" active />
           <NavLink href="#kpi" icon="speed" title="KPI CONNECTIONS" />
           <NavLink href="#gap" icon="warning" title="GAP ANALYSIS" />
           <NavLink href="#questions" icon="help_center" title="FOLLOW-UP" />
         </nav>
 
-        <div className="mt-8 flex flex-col gap-3">
-          <motion.button 
-            whileHover={{ scale: 1.02 }}
+        <div className="mt-auto pt-6 flex flex-col gap-2 border-t border-outline-variant">
+          <motion.button
+            whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             type="button"
-            onClick={() => { console.log("AnalysisResults: Edit & Finalize clicked"); toEdit(); }}
-            className="bg-primary text-on-primary py-3 font-label-caps text-label-caps rounded-lg hover:opacity-90 transition-all shadow-md"
+            onClick={() => toEdit()}
+            className="w-full py-2.5 bg-primary text-on-primary font-label-caps text-[11px] tracking-widest rounded hover:opacity-90 transition-all shadow-sm"
           >
-            Edit & Finalize
+            Edit &amp; Finalize
           </motion.button>
-          <motion.button 
-            whileHover={{ scale: 1.02 }}
+          <motion.button
+            whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             type="button"
             onClick={handleExportPDF}
-            className="border border-outline text-primary py-3 font-label-caps text-label-caps rounded-lg hover:bg-surface-container transition-all"
+            className="w-full py-2.5 bg-surface-container border border-outline-variant text-on-surface-variant font-label-caps text-[11px] tracking-widest rounded hover:bg-surface-container-high transition-all"
           >
             Export PDF
           </motion.button>
@@ -250,20 +271,14 @@ const AnalysisResults = () => {
             <h3 className="font-headline-md text-headline-md text-on-surface">KPI connections</h3>
           </header>
           {result?.kpis && result.kpis.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white border border-outline-variant rounded shadow-sm divide-y-0 px-4">
               {result.kpis.map((kpi, index) => (
-                <KPITile 
+                <KPIRow
                   key={index}
-                  label={kpi.label} 
-                  value={kpi.value} 
-                  status={kpi.status} 
-                  colorText={kpi.color || "text-primary"} 
-                  statusColor={
-                    kpi.status === 'Below Target' || kpi.status === 'Not evidenced'
-                      ? 'text-error'
-                      : 'text-on-surface-variant'
-                  } 
-                  delay={0.1 * index}
+                  label={kpi.label}
+                  value={kpi.value}
+                  status={kpi.status}
+                  delay={0.05 * index}
                 />
               ))}
             </div>
@@ -309,15 +324,15 @@ const AnalysisResults = () => {
           {result?.followUpQuestions && result.followUpQuestions.length > 0 ? (
             <ul className="space-y-4 list-decimal pl-5">
               {result.followUpQuestions.map((q, index) => (
-                <motion.li 
+                <motion.li
                   initial={{ opacity: 0, x: -10 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.05 }}
-                  key={index} 
+                  key={index}
                   className="text-on-surface-variant pl-2 leading-relaxed"
                 >
-                  {q}
+                  {typeof q === 'string' ? q : (q?.question || q?.title || q?.desc || JSON.stringify(q))}
                 </motion.li>
               ))}
             </ul>

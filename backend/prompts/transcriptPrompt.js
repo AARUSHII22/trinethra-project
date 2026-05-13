@@ -1,6 +1,6 @@
 /**
  * Supervisor transcript → structured draft analysis (Ollama).
- * Injects rubric.json and context.md per assignment spec.
+ * Injects rubric.json and context.txt per assignment spec.
  */
 
 const { getAssignmentPayload } = require('../utils/assignmentData');
@@ -20,7 +20,7 @@ const getTranscriptPrompt = (transcript) => {
     .map((d) => `- id: "${d.id}" | name: ${d.name} | ${d.description}`)
     .join('\n');
 
-  const rubricJson = JSON.stringify(rubric, null, 2);
+  const rubricJson = JSON.stringify(rubric);
 
   return `You are an organizational psychologist assisting DeepThought (PDGMS / Trinethra).
 You analyze SUPERVISOR FEEDBACK CALL TRANSCRIPTS about a Fellow (embedded operator in an Indian manufacturing MSME).

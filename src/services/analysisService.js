@@ -1,24 +1,20 @@
 /**
- * Analysis Service
- * analyzeTranscript     — blocking POST (fallback)
- * analyzeTranscriptStream — streaming SSE (primary, real-time feedback)
+ * Analysis service — blocking POST to /api/analyze (reliable with long Ollama runs).
+ * Optional SSE helper kept for experiments; the UI uses blocking only.
  */
 
 import { post } from './api';
 
-// ── Blocking (fallback) ──────────────────────────────────────────────────────
 export const analyzeTranscript = async (transcript) => {
   try {
-    return await post('/analyze', { transcript });
+    return await post('/analyze', { transcript }, { timeoutMs: 600_000 });
   } catch (error) {
     console.error('[ANALYSIS SERVICE ERROR]', error.message);
     throw error;
   }
 };
 
-// ── Streaming SSE ────────────────────────────────────────────────────────────
-// onChunk(text) is called for every token Ollama streams back.
-// Returns the fully-parsed analysis result object.
+/** @deprecated Prefer analyzeTranscript — SSE can stall behind proxies. */
 export const analyzeTranscriptStream = async (transcript, onChunk) => {
   const response = await fetch('/api/analyze/stream', {
     method: 'POST',
@@ -36,6 +32,20 @@ export const analyzeTranscriptStream = async (transcript, onChunk) => {
   let buffer = '';
   let finalResult = null;
 
+  const handleEventLine = (eventBlock) => {
+    const trimmed = eventBlock.trim();
+    if (!trimmed.startsWith('data: ')) return;
+    let data;
+    try {
+      data = JSON.parse(trimmed.slice(6));
+    } catch {
+      return;
+    }
+    if (data.type === 'chunk' && onChunk) onChunk(data.text);
+    else if (data.type === 'done') finalResult = data.result;
+    else if (data.type === 'error') throw new Error(data.message || 'Analysis failed');
+  };
+
   try {
     while (true) {
       const { done, value } = await reader.read();
@@ -44,24 +54,14 @@ export const analyzeTranscriptStream = async (transcript, onChunk) => {
       buffer += decoder.decode(value, { stream: true });
       const events = buffer.split('\n\n');
       buffer = events.pop() ?? '';
-
       for (const event of events) {
-        const trimmed = event.trim();
-        if (!trimmed.startsWith('data: ')) continue;
-        let data;
-        try {
-          data = JSON.parse(trimmed.slice(6));
-        } catch {
-          continue; // malformed SSE line — skip
-        }
-        if (data.type === 'chunk' && onChunk) {
-          onChunk(data.text);
-        } else if (data.type === 'done') {
-          finalResult = data.result;
-        } else if (data.type === 'error') {
-          throw new Error(data.message || 'Analysis failed');
-        }
+        handleEventLine(event);
       }
+    }
+
+    buffer += decoder.decode();
+    if (buffer.trim()) {
+      handleEventLine(buffer);
     }
   } finally {
     reader.releaseLock();

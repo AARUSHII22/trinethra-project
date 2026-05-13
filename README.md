@@ -1,113 +1,91 @@
-# Supervisor Feedback Analyzer — Trinethra (DeepThought assignment)
+# Trinethra — Supervisor Feedback Analyzer
 
-Web app for **psychology interns**: paste a **supervisor feedback call transcript**, run analysis against a **local Ollama** model, and get a **structured draft** (evidence, rubric score, eight KPI rows, absence-based gaps, follow-up questions). The human reviews and edits before finalizing — the AI does not replace judgment.
+Web app for **DeepThought-style supervisor transcripts**: paste a call transcript, run analysis with **local [Ollama](https://ollama.com)** only (no OpenAI / Anthropic / Groq). The backend injects **`rubric.json`** and **`context.txt`** into the prompt and returns structured JSON (evidence, 1–10 score, eight KPI rows, gap dimensions, follow-up questions).
 
-Assignment artifacts live at the **repository root**:
+## Prerequisites
 
-| File | Purpose |
-|------|---------|
-| `context.md` | Fellow model, eight KPI definitions, supervisor bias notes |
-| `rubric.json` | 1–10 rubric bands, level text, **assessment dimensions** (used for gap detection) |
-| `sample-transcripts.json` | Three labeled supervisor transcripts for testing |
+- **Node.js** 18+
+- **Ollama** installed and running ([download](https://ollama.com))
+- At least **~8 GB RAM** for small models
 
-The backend **loads `rubric.json` and `context.md` into the LLM prompt** on every request (see `backend/prompts/transcriptPrompt.js`). The UI loads samples via `GET /api/sample-transcripts`.
+## Quick start
 
----
-
-## Setup (from zero)
-
-**Prerequisites:** Node.js 18+, [Ollama](https://ollama.com) installed.
-
-1. **Pull a small local model** (assignment allows any Ollama model):
+1. **Pull a model** (pick one; must match `OLLAMA_MODEL` in `backend/.env`):
 
    ```bash
    ollama pull llama3.2
    ```
 
-2. **Install dependencies** (frontend + backend):
+   For slower machines: `ollama pull llama3.2:1b`
+
+2. **Install dependencies**:
 
    ```bash
    npm run install-all
    ```
 
-3. **Backend environment** (optional — defaults work for local dev):
+3. **Backend env** (optional — defaults work):
 
    ```bash
    cd backend
    cp .env.example .env
    ```
 
-4. **Start Ollama** (app or `ollama serve`). Confirm:
+   Edit `OLLAMA_MODEL` to match `ollama list` (e.g. `llama3.2`, `llama3.2:latest`, `llama3.2:1b`).
 
-   ```bash
-   curl http://localhost:11434/api/tags
+4. **Optional frontend label** — repo root `.env`:
+
+   ```env
+   VITE_OLLAMA_MODEL=llama3.2
    ```
 
-5. **Run the app** (Express on `:5000`, Vite on `:5173`):
+   Used only for UI copy on the loading screen.
+
+5. **Run** (starts Express `:5000` + Vite `:5173`):
 
    ```bash
-   cd ..   # repo root
    npm run dev
    ```
 
-6. Open **http://localhost:5173** → paste a transcript (or load a sample) → **Run Analysis**.
+6. Open **http://localhost:5173** — load a sample from the sidebar or paste a transcript → **Run analysis**.
 
-**Health checks**
+## Verify Ollama
 
 ```bash
-curl http://localhost:5000/api/health
 curl http://localhost:11434/api/tags
+curl http://localhost:5000/api/health
 ```
 
----
+`/api/health` checks that Ollama is reachable and that `OLLAMA_MODEL` exists in `ollama list`.
 
-## Ollama model choice
+## Architecture
 
-**Default: `llama3.2` (3B-class).** Rationale: runs on typical 8GB laptops, supports `format: "json"` in Ollama for structured output, and is strong enough for evidence extraction and absence-style gap instructions. Override with `OLLAMA_MODEL` in `backend/.env` (e.g. `mistral`, `phi3`).
+**React (Vite)** talks to **Express** on port 5000 via the dev proxy (`/api/*`). The analyze route calls **Ollama** at `OLLAMA_URL` (default `http://localhost:11434/api/generate`) with `format: "json"`, then parses the response (`backend/utils/parseJson.js`). Assignment text lives at the repo root: **`rubric.json`**, **`context.txt`**, **`sample-transcripts.json`**. Optional history is appended to **`backend/db.json`** (lowdb).
 
----
+## Which model and why
 
-## Architecture (one paragraph)
+Default **`llama3.2`** (or **`llama3.2:1b`** on weak CPUs): small enough for laptops, supports JSON mode in Ollama, and fits the assignment’s “local only” rule. Override with `OLLAMA_MODEL` in `backend/.env`.
 
-**React (Vite)** is the browser UI. It calls **Express** on port 5000 through the Vite dev proxy (`/api/*`). The **analyze** routes forward the transcript to **Ollama** at `http://localhost:11434/api/generate` with JSON mode and parse/retry logic (`backend/services/ollamaService.js`, `backend/utils/parseJson.js`). **No cloud LLM** is used in this path. Optional **lowdb** (`backend/db.json`) appends anonymous analysis rows for local history only.
+## Design choices (assignment brief)
 
----
-
-## Design challenges (assignment “pick your battles”)
-
-**1. One prompt vs many**  
-We use **one orchestrated prompt** per transcript: rubric JSON + full `context.md` + strict output schema (evidence, score, all eight KPI rows, dimension-tagged gaps, 3–5 follow-ups). **Tradeoff:** a single call is simpler to operate and keeps latency predictable for a ~10–15 minute transcript; quality depends on JSON mode + retries. **Mitigation:** controller retries up to 3 times on parse failure; `num_predict` is raised so long JSON is not truncated.
-
-**2. Structured output reliability**  
-Ollama is called with **`format: "json"`** plus a single-object schema in the prompt. **`parseJson`** strips accidental fences and slices the outermost `{...}`. If parsing still fails, the controller **retries** the generation.
-
-**3. Gap detection (absence reasoning)**  
-Gaps are defined in the prompt as **dimensions or KPIs not substantiated** in the transcript (using `rubric.json` → `assessmentDimensions` ids), not generic “to improve” lists unless tied to missing coverage.
-
-**4. Evidence + uncertainty in the UI**  
-Copy and layout stress **draft** status (header, results banner, AICallout). **Edit & Finalize** is the explicit human step before treating output as final.
-
----
-
-## What we would improve with more time
-
-- **Clickable evidence → rubric:** link each quote to the rubric level or dimension it supports (Challenge 3 in the brief).  
-- **Side-by-side diff:** locked transcript pane next to editable fields to reduce context switching.  
-- **Tests:** golden-file prompts against the three `sample-transcripts.json` entries to catch schema drift.
-
----
+1. **One prompt vs many** — One orchestrated prompt (rubric + context + strict JSON schema) per transcript for predictable latency; controller retries on JSON parse failure.
+2. **Structured output** — Ollama `format: "json"` plus `parseJson` fence-stripping and `{…}` extraction.
 
 ## API
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/health` | Server + configured model name |
-| `GET` | `/api/sample-transcripts` | Assignment sample JSON |
+| `GET` | `/api/health` | Backend + Ollama model probe |
+| `GET` | `/api/sample-transcripts` | Three bundled sample transcripts |
 | `POST` | `/api/analyze` | Body `{ "transcript": "..." }` — blocking JSON |
-| `POST` | `/api/analyze/stream` | Same body — SSE stream then final `done` event |
+| `POST` | `/api/analyze/stream` | SSE stream (optional; UI uses blocking analyze) |
 
----
+## Troubleshooting
 
-## Submission reminder (assignment Part B)
+- **ECONNREFUSED** — Start Ollama (app or `ollama serve`).
+- **404 / unknown model** — `ollama pull <OLLAMA_MODEL>` and match `ollama list` exactly.
+- **Slow first run** — Model load can take 1–2 minutes; later requests are faster.
 
-Record **two videos**: (1) app demo with Ollama running, (2) code walkthrough including prompt design — and send them in the Internshala chat as required.
+## License / use
+
+Built for internship / assignment demonstration. Adjust as needed for your org.

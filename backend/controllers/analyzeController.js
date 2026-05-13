@@ -18,20 +18,7 @@ const analyzeTranscript = async (req, res) => {
 
   try {
     console.log('[CONTROLLER] Analysis request');
-
-    let result;
-    let attempts = 0;
-    while (attempts < 3) {
-      try {
-        result = await generateAnalysis(transcript);
-        break;
-      } catch (e) {
-        attempts++;
-        console.warn(`[RETRY] Attempt ${attempts} failed: ${e.message}`);
-        if (attempts >= 3) throw e;
-      }
-    }
-
+    const result = await generateAnalysis(transcript);
     await _storeResult('anonymous', transcript, result);
     res.json(result);
   } catch (error) {

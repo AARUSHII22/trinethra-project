@@ -39,7 +39,7 @@ const InfoPanel = () => {
         </h3>
         <ol className="space-y-6 list-decimal pl-5 text-on-surface-variant font-body-base">
           <li>
-            Sends the pasted supervisor transcript to your <strong className="text-on-surface">local Ollama</strong> model (no cloud LLM).
+            Sends the pasted supervisor transcript to your <strong className="text-on-surface">local Ollama</strong> model (runs on your machine).
           </li>
           <li>
             Produces a <strong className="text-on-surface">draft</strong>: evidence quotes, suggested 1–10 rubric score, KPI mapping (8 KPIs from assignment context), gaps where the call did not cover rubric dimensions, and follow-up questions.

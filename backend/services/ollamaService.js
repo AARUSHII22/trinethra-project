@@ -1,26 +1,23 @@
 /**
- * Ollama Service
- * Communicates with the local Ollama instance.
- * Provides both a blocking call and a streaming call.
+ * Ollama service — local inference at http://localhost:11434 (assignment spec: no cloud LLM).
  */
 
-const axios  = require('axios');
+const axios = require('axios');
 const { getTranscriptPrompt } = require('../prompts/transcriptPrompt');
-const { parseJson }           = require('../utils/parseJson');
+const { parseJson } = require('../utils/parseJson');
 
 require('dotenv').config();
 
-const OLLAMA_URL   = process.env.OLLAMA_URL   || 'http://localhost:11434/api/generate';
+const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434/api/generate';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.2';
 
-// Inference options that reduce latency without sacrificing quality
 const INFERENCE_OPTIONS = {
   temperature: 0,
-  num_predict: 2800,
+  num_predict: 1400,
+  num_ctx: 8192,
   top_k: 1,
 };
 
-// ── Blocking (non-streaming) ─────────────────────────────────────────────────
 const generateAnalysis = async (transcript) => {
   const prompt = getTranscriptPrompt(transcript);
   console.log(`[OLLAMA] Sending to ${OLLAMA_MODEL} at ${OLLAMA_URL}`);
@@ -29,13 +26,13 @@ const generateAnalysis = async (transcript) => {
     const response = await axios.post(
       OLLAMA_URL,
       {
-        model:   OLLAMA_MODEL,
+        model: OLLAMA_MODEL,
         prompt,
-        stream:  false,
-        format:  'json',
+        stream: false,
+        format: 'json',
         options: INFERENCE_OPTIONS,
       },
-      { timeout: 300000 } // 5-minute timeout
+      { timeout: 600000 }
     );
 
     const rawText = response.data?.response;
@@ -45,20 +42,27 @@ const generateAnalysis = async (transcript) => {
 
     console.log('[OLLAMA] Raw response received, parsing JSON...');
     return parseJson(rawText);
-
   } catch (error) {
     if (error.code === 'ECONNREFUSED') {
       throw new Error('Cannot connect to Ollama. Make sure Ollama is running: open the Ollama app or run `ollama serve`.');
     }
     if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
-      throw new Error('Ollama request timed out after 5 minutes. Try a smaller model (llama3.2:1b) or free up RAM.');
+      throw new Error('Ollama request timed out after 10 minutes. Try a smaller model (llama3.2:1b) or shorten the transcript.');
+    }
+    const status = error.response?.status;
+    const ollamaMsg = error.response?.data?.error || error.response?.data?.message;
+    if (status === 404) {
+      throw new Error(
+        `Ollama has no model matching "${OLLAMA_MODEL}". Run: ollama pull ${OLLAMA_MODEL}   Then check: ollama list`
+      );
+    }
+    if (ollamaMsg) {
+      throw new Error(`Ollama: ${ollamaMsg}`);
     }
     throw error;
   }
 };
 
-// ── Streaming ────────────────────────────────────────────────────────────────
-// Calls onChunk(text) for each partial token, returns the parsed JSON result.
 const generateAnalysisStream = async (transcript, onChunk) => {
   const prompt = getTranscriptPrompt(transcript);
   console.log(`[OLLAMA STREAM] Starting stream with ${OLLAMA_MODEL}`);
@@ -67,26 +71,26 @@ const generateAnalysisStream = async (transcript, onChunk) => {
     const response = await axios.post(
       OLLAMA_URL,
       {
-        model:   OLLAMA_MODEL,
+        model: OLLAMA_MODEL,
         prompt,
-        stream:  true,
-        format:  'json',
+        stream: true,
+        format: 'json',
         options: INFERENCE_OPTIONS,
       },
       {
-        timeout:      300000,
+        timeout: 600000,
         responseType: 'stream',
       }
     );
 
     let accumulated = '';
-    let lineBuffer  = '';
+    let lineBuffer = '';
 
     await new Promise((resolve, reject) => {
       response.data.on('data', (chunk) => {
         lineBuffer += chunk.toString();
         const lines = lineBuffer.split('\n');
-        lineBuffer = lines.pop() ?? ''; // keep partial last line
+        lineBuffer = lines.pop() ?? '';
 
         for (const line of lines) {
           const trimmed = line.trim();
@@ -105,7 +109,7 @@ const generateAnalysisStream = async (transcript, onChunk) => {
               resolve();
             }
           } catch {
-            // non-JSON line — skip
+            /* non-JSON line */
           }
         }
       });
@@ -114,12 +118,13 @@ const generateAnalysisStream = async (transcript, onChunk) => {
       response.data.on('error', reject);
     });
 
-    // Process any remaining buffered data after stream ends
     if (lineBuffer.trim()) {
       try {
         const parsed = JSON.parse(lineBuffer.trim());
         if (parsed.response) accumulated += parsed.response;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     if (!accumulated) {
@@ -128,13 +133,22 @@ const generateAnalysisStream = async (transcript, onChunk) => {
 
     console.log('[OLLAMA STREAM] Complete, parsing JSON...');
     return parseJson(accumulated);
-
   } catch (error) {
     if (error.code === 'ECONNREFUSED') {
       throw new Error('Cannot connect to Ollama. Make sure Ollama is running: open the Ollama app or run `ollama serve`.');
     }
     if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
-      throw new Error('Ollama stream timed out. Try a smaller model (llama3.2:1b) or free up RAM.');
+      throw new Error('Ollama stream timed out after 10 minutes. Try a smaller model (llama3.2:1b) or shorten the transcript.');
+    }
+    const status = error.response?.status;
+    const ollamaMsg = error.response?.data?.error || error.response?.data?.message;
+    if (status === 404) {
+      throw new Error(
+        `Ollama has no model matching "${OLLAMA_MODEL}". Run: ollama pull ${OLLAMA_MODEL}   Then check: ollama list`
+      );
+    }
+    if (ollamaMsg) {
+      throw new Error(`Ollama: ${ollamaMsg}`);
     }
     throw error;
   }
