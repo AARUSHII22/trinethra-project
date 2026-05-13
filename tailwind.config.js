@@ -68,6 +68,9 @@ export default {
         "gutter": "24px",
         "unit": "4px"
       },
+      "maxWidth": {
+        "container-max": "1280px"
+      },
       "fontFamily": {
         "headline-md": ["Inter"],
         "label-caps": ["Inter"],

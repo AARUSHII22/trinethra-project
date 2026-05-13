@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNav } from '../../navigation';
 import { useAnalysis } from '../../context/AnalysisContext';
+import { generateAnalysisPDF } from '../../utils/pdfGenerator';
 
 // --- Reusable Subcomponents ---
 
@@ -56,13 +57,16 @@ const KPITile = ({ label, value, status, colorText, statusColor, delay }) => (
   </motion.div>
 );
 
-const GapCard = ({ icon, title, desc, bgClass, borderClass, iconClass }) => (
+const GapCard = ({ icon, title, desc, meta, bgClass, borderClass, iconClass }) => (
   <motion.div 
     whileHover={{ x: 4 }}
     className={`flex gap-4 p-4 rounded items-start ${bgClass} ${borderClass} shadow-sm transition-all`}
   >
     <span className={`material-symbols-outlined mt-1 ${iconClass}`}>{icon}</span>
     <div>
+      {meta && (
+        <p className="text-[10px] font-data-mono text-outline uppercase tracking-wide mb-1">{meta}</p>
+      )}
       <p className="font-bold text-on-surface text-body-base">{title}</p>
       <p className="text-on-surface-variant text-sm">{desc}</p>
     </div>
@@ -90,6 +94,26 @@ const SpeakerBlock = ({ name, time, isInterviewer, children }) => (
 const AnalysisResults = () => {
   const { toEdit } = useNav();
   const { analysisData } = useAnalysis();
+  
+  const handleExportPDF = () => {
+    try {
+      console.log('[AnalysisResults] Exporting PDF with data:', analysisData);
+      
+      // Validate data before attempting PDF generation
+      if (!analysisData || !analysisData.analysisResult) {
+        alert('No analysis data available to export. Please complete an analysis first.');
+        return;
+      }
+      
+      generateAnalysisPDF(analysisData);
+      
+      // Show success message
+      console.log('[AnalysisResults] PDF exported successfully');
+    } catch (error) {
+      console.error('[AnalysisResults] PDF generation failed:', error);
+      alert(`Failed to generate PDF: ${error.message}\n\nPlease check the browser console for details.`);
+    }
+  };
   
   if (!analysisData.analysisResult && !analysisData.isLoading) {
     return (
@@ -131,7 +155,10 @@ const AnalysisResults = () => {
           className="mb-8"
         >
           <p className="font-label-caps text-label-caps text-on-surface-variant mb-2">STATUS</p>
-          <h1 className="font-headline-md text-headline-md text-primary">Analysis complete</h1>
+          <h1 className="font-headline-md text-headline-md text-primary">Draft analysis ready</h1>
+          <p className="text-on-surface-variant text-xs mt-2 leading-relaxed border-l-2 border-secondary pl-3">
+            This is AI-assisted output for intern review — not a final verdict. Use Edit &amp; Finalize to adjust score and evidence.
+          </p>
         </motion.div>
 
         <motion.div 
@@ -179,7 +206,7 @@ const AnalysisResults = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             type="button"
-            onClick={() => console.log("AnalysisResults: Export PDF clicked")}
+            onClick={handleExportPDF}
             className="border border-outline text-primary py-3 font-label-caps text-label-caps rounded-lg hover:bg-surface-container transition-all"
           >
             Export PDF
@@ -231,7 +258,11 @@ const AnalysisResults = () => {
                   value={kpi.value} 
                   status={kpi.status} 
                   colorText={kpi.color || "text-primary"} 
-                  statusColor={kpi.status === 'Below Target' ? 'text-error' : 'text-on-surface-variant'} 
+                  statusColor={
+                    kpi.status === 'Below Target' || kpi.status === 'Not evidenced'
+                      ? 'text-error'
+                      : 'text-on-surface-variant'
+                  } 
                   delay={0.1 * index}
                 />
               ))}
@@ -253,9 +284,10 @@ const AnalysisResults = () => {
               result.gaps.map((gap, index) => (
                 <GapCard 
                   key={index}
-                  icon={gap.icon}
+                  icon={gap.icon || 'help'}
                   title={gap.title}
                   desc={gap.desc}
+                  meta={gap.dimensionId}
                   bgClass={gap.type === 'Critical' ? 'bg-error-container/30' : 'bg-surface-container'}
                   borderClass={gap.type === 'Critical' ? 'border-error-container' : 'border-outline-variant'}
                   iconClass={gap.type === 'Critical' ? 'text-error' : 'text-primary'}

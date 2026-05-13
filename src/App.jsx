@@ -9,19 +9,10 @@ import LoadingAnalysis from './components/screens/LoadingAnalysis';
 import AnalysisResults from './components/screens/AnalysisResults';
 import EditFinalize from './components/screens/EditFinalize';
 import AssessmentSubmitted from './components/screens/AssessmentSubmitted';
-import AuthPortal from './components/screens/AuthPortal';
-import { AuthProvider, useAuth } from './context/AuthContext';
 
 function AnimatedRoutes() {
   const location = useLocation();
-  const { user, loading } = useAuth();
 
-  if (loading) return null;
-
-  if (!user) {
-    return <AuthPortal />;
-  }
-  
   return (
     <div className="flex flex-col min-h-screen bg-surface">
       <Header />
@@ -47,11 +38,9 @@ function AnimatedRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <AnimatedRoutes />
-      </Router>
-    </AuthProvider>
+    <Router>
+      <AnimatedRoutes />
+    </Router>
   );
 }
 

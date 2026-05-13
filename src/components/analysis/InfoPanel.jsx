@@ -1,22 +1,34 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAnalysis } from '../../context/AnalysisContext';
 
 const InfoPanel = () => {
   const { updateAnalysis } = useAnalysis();
+  const [samples, setSamples] = useState([]);
+  const [loadError, setLoadError] = useState(null);
 
-  const samples = {
-    'Positive_Sample.txt': {
-      name: "Julianna Rivera",
-      text: "Interviewer: How do you approach team conflict?\nJulianna: I believe in radical transparency. In my last role, we had a major disagreement about the deployment timeline. I pulled the team into a room, laid out the data, and we worked until we had a consensus. It's about shared ownership of the outcome."
-    },
-    'Mixed_Dynamic.txt': {
-      name: "Marcus Chen",
-      text: "Interviewer: Tell me about a time you failed.\nMarcus: We missed the Q3 target. It was my responsibility. I had the vision, but I didn't verify the resource allocation at the factory level. I've since implemented a double-check protocol for all operational shifts."
-    },
-    'Negative_Conflict.txt': {
-      name: "Elena Rossi",
-      text: "Interviewer: What is your management style?\nElena: I expect people to do their jobs. If I have to explain a task twice, it's a performance issue. We don't have time for hand-holding in a high-growth environment."
-    }
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/sample-transcripts')
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((data) => {
+        if (!cancelled) setSamples(Array.isArray(data) ? data : []);
+      })
+      .catch((e) => {
+        if (!cancelled) setLoadError(e.message || 'Failed to load samples');
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const loadSample = (entry) => {
+    const name = entry?.metadata?.fellowName || 'Fellow';
+    updateAnalysis({
+      transcript: entry.transcript || '',
+      fellowName: name,
+      supervisorRole: entry?.metadata?.supervisorRole || '',
+    });
   };
 
   return (
@@ -25,53 +37,42 @@ const InfoPanel = () => {
         <h3 className="font-headline-md text-headline-md text-primary">
           What this tool does
         </h3>
-        <ol className="space-y-6">
-          <li className="flex gap-4">
-            <span className="flex-shrink-0 w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center font-bold text-sm">
-              1
-            </span>
-            <p className="text-on-surface-variant font-body-base">
-              Identifies systemic friction points within operational hierarchies by analyzing natural language patterns.
-            </p>
+        <ol className="space-y-6 list-decimal pl-5 text-on-surface-variant font-body-base">
+          <li>
+            Sends the pasted supervisor transcript to your <strong className="text-on-surface">local Ollama</strong> model (no cloud LLM).
           </li>
-          <li className="flex gap-4">
-            <span className="flex-shrink-0 w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center font-bold text-sm">
-              2
-            </span>
-            <p className="text-on-surface-variant font-body-base">
-              Categorizes interpersonal dynamics into institutional growth markers or risk factors.
-            </p>
+          <li>
+            Produces a <strong className="text-on-surface">draft</strong>: evidence quotes, suggested 1–10 rubric score, KPI mapping (8 KPIs from assignment context), gaps where the call did not cover rubric dimensions, and follow-up questions.
           </li>
-          <li className="flex gap-4">
-            <span className="flex-shrink-0 w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center font-bold text-sm">
-              3
-            </span>
-            <p className="text-on-surface-variant font-body-base">
-              Generates structured executive summaries suitable for legal or academic archiving.
-            </p>
+          <li>
+            You <strong className="text-on-surface">review, edit, and finalize</strong> — the model suggests; the intern decides.
           </li>
         </ol>
       </section>
 
       <section className="space-y-4">
         <h4 className="font-label-caps text-label-caps text-outline uppercase">
-          Quick-load sample transcripts
+          Sample supervisor transcripts
         </h4>
-        <div className="flex flex-wrap gap-2">
-          {Object.keys(samples).map((sample) => (
-            <button 
-              key={sample}
+        <p className="text-xs text-on-surface-variant">
+          Loaded from <code className="bg-surface-container px-1 rounded">sample-transcripts.json</code> at the repo root (assignment data).
+        </p>
+        {loadError && (
+          <p className="text-error text-sm">{loadError}</p>
+        )}
+        <div className="flex flex-col gap-2">
+          {samples.map((entry) => (
+            <button
+              key={entry.id}
               type="button"
-              onClick={() => {
-                console.log(`InfoPanel: Loading sample ${sample}`);
-                updateAnalysis({ 
-                  transcript: samples[sample].text,
-                  fellowName: samples[sample].name
-                });
-              }}
-              className="px-4 py-2 bg-surface-container-high border border-outline-variant text-on-surface-variant font-data-mono rounded-full hover:bg-primary hover:text-white transition-colors text-xs"
+              onClick={() => loadSample(entry)}
+              className="text-left px-4 py-3 bg-surface-container-high border border-outline-variant text-on-surface-variant font-body-base rounded hover:bg-primary hover:text-white transition-colors text-sm"
             >
-              {sample}
+              <span className="font-label-caps text-[10px] text-outline block">{entry.tone}</span>
+              <span className="font-medium text-on-surface">{entry.title}</span>
+              {entry.metadata?.clientContext && (
+                <span className="block text-xs mt-1 opacity-80">{entry.metadata.clientContext}</span>
+              )}
             </button>
           ))}
         </div>

@@ -64,7 +64,7 @@ const EditFinalize = () => {
             </motion.div>
             <h1 className="font-headline-md text-3xl text-on-surface">Review & Adjust</h1>
             <p className="text-on-surface-variant font-body-base max-w-2xl leading-relaxed">
-              Manually calibrate the AI-generated score and behavioral evidence before archival. Your adjustments will be logged for model refinement.
+              The AI produced a <strong className="text-on-surface">draft</strong>. Adjust the score and evidence to match your judgment before you treat this as final documentation.
             </p>
           </header>
 

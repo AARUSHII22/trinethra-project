@@ -10,7 +10,6 @@ export const post = async (endpoint, data) => {
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
     body: JSON.stringify(data),
   });
 
@@ -25,7 +24,6 @@ export const post = async (endpoint, data) => {
 export const get = async (endpoint) => {
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method: 'GET',
-    credentials: 'include',
   });
 
   if (!response.ok) {
