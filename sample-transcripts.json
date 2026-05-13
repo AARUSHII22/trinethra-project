@@ -1,0 +1,35 @@
+[
+  {
+    "id": "sample-positive-01",
+    "title": "Strong systems and floor pull",
+    "tone": "positive",
+    "metadata": {
+      "fellowName": "Aditi Menon",
+      "supervisorRole": "COO",
+      "clientContext": "Tier-2 automotive components, ~120 shop-floor workers"
+    },
+    "transcript": "Supervisor: We’ve had Aditi for about ten weeks now. Honestly she’s been a relief.\n\nIntern: What stands out day to day?\n\nSupervisor: She didn’t come in with slides—she went to the line on day two. She set up a simple morning huddle in packing: five minutes, three numbers—yesterday output, today plan, one blocker. People actually show up because she kept it short.\n\nIntern: Any concrete outcomes?\n\nSupervisor: Dispatch reliability. We used to miss 3–4 trucks a week for paperwork or FG not staged. Last month we missed one, and that was because a supplier short-shipped us. She built a one-page checklist at the dock—who signs, what photo goes on WhatsApp—sounds small but it stuck.\n\nIntern: How does the team respond to her?\n\nSupervisor: The floor supervisors argue less with planning now because expectations are visible on a whiteboard. One guy, Vikram, was skeptical; he told me last Friday he’d rather have her checklist than another ERP training.\n\nIntern: Anything she should improve?\n\nSupervisor: She pushes hard on documentation—good for us long term—but sometimes the older supervisors feel “watched.” She’s learning to soften the framing.\n\nIntern: Systems-wise?\n\nSupervisor: We have a daily production log for the first time that isn’t fiction. She linked it to dispatch proof so accounts can bill faster. My CFO stopped chasing me for “pending despatch” screenshots.\n\nIntern: Safety or compliance?\n\nSupervisor: She ran a near-miss week—we got eight reports, which is eight more than usual. Nothing dramatic, but people started talking.\n\nIntern: Anything we didn’t cover you want to add?\n\nSupervisor: She’s earned trust. I want her to stay through the audit prep next quarter."
+  },
+  {
+    "id": "sample-mixed-02",
+    "title": "Reliable operator, uneven depth",
+    "tone": "mixed",
+    "metadata": {
+      "fellowName": "Rohan Khanna",
+      "supervisorRole": "Factory Owner",
+      "clientContext": "Food packaging, two shifts, seasonal demand spikes"
+    },
+    "transcript": "Supervisor: Rohan is sincere. He shows up, he stays late when we spike before Diwali.\n\nIntern: What has improved with him onsite?\n\nSupervisor: He fixed our overtime chaos—half the problem was we didn’t know who was actually on the line. He put a roster on the notice board and stuck to it. People stopped gaming the register.\n\nIntern: Quality or rework?\n\nSupervisor: Rework is still there on the pouch sealers when humidity jumps. He tried a humidity log for a week but then we got busy and it fell off.\n\nIntern: Systems?\n\nSupervisor: He’s good at firefighting. When a machine goes down he coordinates with maintenance fast. I don’t know if we have “systems” yet—it’s still a lot of WhatsApp groups.\n\nIntern: How do supervisors respond to him?\n\nSupervisor: Maintenance likes him. Production manager finds him a bit impatient—wants answers on WhatsApp at 10 p.m.\n\nIntern: Cash or billing side?\n\nSupervisor: We didn’t really talk about that with him. Finance does their own thing.\n\nIntern: Safety?\n\nSupervisor: He reminds people about gloves on the filling line. We haven’t done a formal near-miss program.\n\nIntern: Overall?\n\nSupervisor: I’d call him dependable for the spike season. I still need someone to make the routines survive when we’re not in panic mode."
+  },
+  {
+    "id": "sample-negative-03",
+    "title": "Trust and follow-through concerns",
+    "tone": "negative",
+    "metadata": {
+      "fellowName": "Sana Mirza",
+      "supervisorRole": "Production Head",
+      "clientContext": "Industrial fasteners, job-shop mix, high variety"
+    },
+    "transcript": "Supervisor: I’ll be direct. We wanted structure; what we got was a lot of meetings and not enough closure.\n\nIntern: Can you give an example?\n\nSupervisor: She proposed a triage board for hot jobs—great idea. Two weeks later half the cards are blank and nobody updates it. When I asked, she said “the team has to own it.” I agree, but ownership doesn’t appear by itself.\n\nIntern: Reliability?\n\nSupervisor: She committed to a weekly summary email to me and the owner. It came maybe three times out of eight weeks. Small thing, but I stopped trusting the cadence.\n\nIntern: Team response?\n\nSupervisor: Mixed. Some junior engineers like her energy. Shop floor leads say she changes the format every few days so they can’t build habit.\n\nIntern: Outcomes on delivery?\n\nSupervisor: Dispatch is still messy. We still argue about job priorities at 6 p.m. I haven’t seen a sustained change in on-time dispatch—maybe a good day here and there.\n\nIntern: Quality or scrap?\n\nSupervisor: Not really her lane—we didn’t involve her in quality meetings much.\n\nIntern: Professional conduct?\n\nSupervisor: No issues there—she’s polite, confidential, fine on that front.\n\nIntern: Anything positive?\n\nSupervisor: She’s smart. When she’s in the room, problem statements get clearer. But I need fewer workshops and more locked routines.\n\nIntern: Systems building?\n\nSupervisor: That’s the gap. We have fragments, not a system the team runs without her pushing."
+  }
+]

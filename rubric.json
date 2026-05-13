@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "title": "Fellow performance — supervisor feedback rubric",
+  "scale": { "min": 1, "max": 10 },
+  "bands": [
+    {
+      "range": [1, 3],
+      "label": "Need Attention",
+      "summary": "Material reliability, ownership, or execution gaps; requires close supervision and remediation."
+    },
+    {
+      "range": [4, 6],
+      "label": "Productivity",
+      "summary": "Competent day-to-day execution; dependable but not yet driving systemic change or full autonomy."
+    },
+    {
+      "range": [7, 10],
+      "label": "Performance",
+      "summary": "Strong ownership, proactive problem-solving, systems thinking, and positive influence on client teams."
+    }
+  ],
+  "levels": [
+    { "score": 1, "descriptor": "Critical gaps; trust or delivery at risk." },
+    { "score": 2, "descriptor": "Repeated misses; limited follow-through." },
+    { "score": 3, "descriptor": "Inconsistent; needs heavy steering." },
+    { "score": 4, "descriptor": "Adequate task completion; narrow initiative." },
+    { "score": 5, "descriptor": "Reliable on assigned tasks; uneven depth." },
+    { "score": 6, "descriptor": "Solid operator; predictable delivery." },
+    { "score": 7, "descriptor": "Takes ownership beyond tasks; good judgment." },
+    { "score": 8, "descriptor": "Drives outcomes; builds lightweight systems." },
+    { "score": 9, "descriptor": "Transforms workflows; strong client pull." },
+    { "score": 10, "descriptor": "Exceptional Fellow impact; rare calibration." }
+  ],
+  "assessmentDimensions": [
+    {
+      "id": "reliability_followthrough",
+      "name": "Reliability and follow-through",
+      "description": "Meets commitments, closes loops, communicates delays early."
+    },
+    {
+      "id": "ownership_initiative",
+      "name": "Ownership and initiative",
+      "description": "Identifies problems without waiting to be told; proposes next steps."
+    },
+    {
+      "id": "systems_building",
+      "name": "Systems building",
+      "description": "Creates checklists, trackers, cadences, or SOPs that outlast ad-hoc fixes."
+    },
+    {
+      "id": "stakeholder_communication",
+      "name": "Stakeholder communication",
+      "description": "Clear updates to supervisor and client team; appropriate escalation."
+    },
+    {
+      "id": "team_response",
+      "name": "How the team responds to the Fellow",
+      "description": "Trust, friction, adoption of Fellow-led rituals, informal feedback from floor."
+    },
+    {
+      "id": "problem_diagnosis",
+      "name": "Problem diagnosis and prioritization",
+      "description": "Correct root causes vs symptoms; focuses on highest leverage work."
+    },
+    {
+      "id": "execution_pace",
+      "name": "Execution pace and quality",
+      "description": "Throughput vs rework; attention to detail in operational work."
+    },
+    {
+      "id": "professional_conduct",
+      "name": "Professional conduct and judgment",
+      "description": "Confidentiality, boundaries, conflict handling, alignment with client culture."
+    }
+  ]
+}
